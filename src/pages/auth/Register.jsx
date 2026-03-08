@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import api from '../../api/axios'
@@ -10,10 +10,16 @@ export default function Register() {
     name: '',
     email: '',
     password: '',
-    role: 'CITIZEN'
+    role: 'CITIZEN',
+    departmentId: ''
   })
+  const [departments, setDepartments] = useState([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    api.get('/departments').then(res => setDepartments(res.data)).catch(() => {})
+  }, [])
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
@@ -22,9 +28,17 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+
+    if (form.role === 'DEPARTMENT_STAFF' && !form.departmentId) {
+      setError('Please select a department')
+      return
+    }
+
     setLoading(true)
     try {
-      const res = await api.post('/auth/register', form)
+      const payload = { ...form }
+      if (form.role !== 'DEPARTMENT_STAFF') delete payload.departmentId
+      const res = await api.post('/auth/register', payload)
       login(res.data)
       const role = res.data.role
       if (role === 'CITIZEN') navigate('/citizen')
@@ -59,9 +73,7 @@ export default function Register() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Full Name
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
               <input
                 type="text"
                 name="name"
@@ -74,9 +86,7 @@ export default function Register() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email Address
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
               <input
                 type="email"
                 name="email"
@@ -89,9 +99,7 @@ export default function Register() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Password
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
               <input
                 type="password"
                 name="password"
@@ -104,9 +112,7 @@ export default function Register() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Role
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
               <select
                 name="role"
                 value={form.role}
@@ -118,6 +124,23 @@ export default function Register() {
                 <option value="DEPARTMENT_STAFF">Department Staff</option>
               </select>
             </div>
+
+            {form.role === 'DEPARTMENT_STAFF' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                <select
+                  name="departmentId"
+                  value={form.departmentId}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                >
+                  <option value="">Select a department</option>
+                  {departments.map(d => (
+                    <option key={d.id} value={d.id}>{d.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <button
               type="submit"
