@@ -11,6 +11,7 @@ export default function AdminDashboard() {
   const [filters, setFilters] = useState({ status: '', departmentId: '', category: '' })
   const [assigning, setAssigning] = useState(null)
   const [assignDeptId, setAssignDeptId] = useState('')
+  const [assignError, setAssignError] = useState('')
   const [success, setSuccess] = useState('')
 
   const statusColors = {
@@ -27,20 +28,20 @@ export default function AdminDashboard() {
   }, [])
 
   const fetchRequests = async (f = filters) => {
-      setLoading(true)
-      try {
-        const params = new URLSearchParams()
-        if (f.status) params.append('status', f.status)
-        if (f.departmentId) params.append('departmentId', f.departmentId)
-        if (f.category) params.append('category', f.category)
-        const res = await api.get(`/admin/requests?${params.toString()}`)
-        setRequests(res.data.content)
-      } catch (err) {
-        console.error('Failed to fetch requests')
-      } finally {
-        setLoading(false)
-      }
+    setLoading(true)
+    try {
+      const params = new URLSearchParams()
+      if (f.status) params.append('status', f.status)
+      if (f.departmentId) params.append('departmentId', f.departmentId)
+      if (f.category) params.append('category', f.category)
+      const res = await api.get(`/admin/requests?${params.toString()}`)
+      setRequests(res.data.content)
+    } catch (err) {
+      console.error('Failed to fetch requests')
+    } finally {
+      setLoading(false)
     }
+  }
 
   const fetchStats = async () => {
     try {
@@ -67,6 +68,8 @@ export default function AdminDashboard() {
   }
 
   const handleAssign = async (requestId) => {
+    if (!assignDeptId) { setAssignError('Please select a department'); return }
+    setAssignError('')
     try {
       await api.put(`/admin/requests/${requestId}/assign`, { departmentId: assignDeptId })
       setSuccess('Request assigned successfully.')
@@ -82,8 +85,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-
-      {/* Navbar */}
       <nav className="bg-blue-900 px-8 py-4 flex justify-between items-center">
         <div>
           <h1 className="text-white text-xl font-bold">GSRS</h1>
@@ -91,20 +92,13 @@ export default function AdminDashboard() {
         </div>
         <div className="flex items-center gap-4">
           <span className="text-blue-200 text-sm">Admin: {user.name}</span>
-          <button
-            onClick={logout}
-            className="bg-white text-blue-900 text-sm font-medium px-4 py-1.5 rounded hover:bg-blue-50 transition"
-          >
-            Logout
-          </button>
+          <button onClick={logout} className="bg-white text-blue-900 text-sm font-medium px-4 py-1.5 rounded hover:bg-blue-50 transition">Logout</button>
         </div>
       </nav>
 
       <div className="max-w-6xl mx-auto px-6 py-8">
-
         <h2 className="text-2xl font-bold text-gray-800 mb-6">Admin Dashboard</h2>
 
-        {/* Stats */}
         {stats && (
           <div className="grid grid-cols-5 gap-4 mb-8">
             {[
@@ -115,33 +109,21 @@ export default function AdminDashboard() {
               { label: 'Rejected', value: stats.rejected, color: 'bg-red-600' },
             ].map((s) => (
               <div key={s.label} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 text-center">
-                <div className={`text-white text-2xl font-bold rounded-lg py-2 mb-2 ${s.color}`}>
-                  {s.value}
-                </div>
+                <div className={`text-white text-2xl font-bold rounded-lg py-2 mb-2 ${s.color}`}>{s.value}</div>
                 <p className="text-gray-600 text-sm font-medium">{s.label}</p>
               </div>
             ))}
           </div>
         )}
 
-        {/* Success Message */}
-        {success && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4 text-sm">
-            {success}
-          </div>
-        )}
+        {success && <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4 text-sm">{success}</div>}
 
-        {/* Filters */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
           <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Filter by Status</label>
-              <select
-                name="status"
-                value={filters.status}
-                onChange={handleFilterChange}
-                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-              >
+              <select name="status" value={filters.status} onChange={handleFilterChange}
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
                 <option value="">All Statuses</option>
                 <option value="SUBMITTED">Submitted</option>
                 <option value="IN_PROGRESS">In Progress</option>
@@ -151,33 +133,21 @@ export default function AdminDashboard() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Filter by Department</label>
-              <select
-                name="departmentId"
-                value={filters.departmentId}
-                onChange={handleFilterChange}
-                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-              >
+              <select name="departmentId" value={filters.departmentId} onChange={handleFilterChange}
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
                 <option value="">All Departments</option>
-                {departments.map(d => (
-                  <option key={d.id} value={d.id}>{d.name}</option>
-                ))}
+                {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
               </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Filter by Category</label>
-              <input
-                type="text"
-                name="category"
-                value={filters.category}
-                onChange={handleFilterChange}
+              <input type="text" name="category" value={filters.category} onChange={handleFilterChange}
                 placeholder="e.g. Infrastructure"
-                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
           </div>
         </div>
 
-        {/* Requests Table */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           {loading ? (
             <div className="px-6 py-12 text-center text-gray-400 text-sm">Loading requests...</div>
@@ -208,40 +178,26 @@ export default function AdminDashboard() {
                         {req.status.replace('_', ' ')}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-gray-500">
-                      {new Date(req.createdAt).toLocaleDateString()}
-                    </td>
+                    <td className="px-6 py-4 text-gray-500">{new Date(req.createdAt).toLocaleDateString()}</td>
                     <td className="px-6 py-4">
                       {assigning === req.id ? (
-                        <div className="flex items-center gap-2">
-                          <select
-                            value={assignDeptId}
-                            onChange={(e) => setAssignDeptId(e.target.value)}
-                            className="border border-gray-300 rounded px-2 py-1 text-xs bg-white"
-                          >
-                            <option value="">Select</option>
-                            {departments.map(d => (
-                              <option key={d.id} value={d.id}>{d.name}</option>
-                            ))}
-                          </select>
-                          <button
-                            onClick={() => handleAssign(req.id)}
-                            className="bg-blue-900 text-white text-xs px-2 py-1 rounded hover:bg-blue-800"
-                          >
-                            Save
-                          </button>
-                          <button
-                            onClick={() => setAssigning(null)}
-                            className="text-gray-500 text-xs px-2 py-1 rounded hover:bg-gray-100"
-                          >
-                            Cancel
-                          </button>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <select
+                              value={assignDeptId}
+                              onChange={(e) => { setAssignDeptId(e.target.value); setAssignError('') }}
+                              className={`border rounded px-2 py-1 text-xs bg-white ${assignError ? 'border-red-400' : 'border-gray-300'}`}
+                            >
+                              <option value="">Select</option>
+                              {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                            </select>
+                            <button onClick={() => handleAssign(req.id)} className="bg-blue-900 text-white text-xs px-2 py-1 rounded hover:bg-blue-800">Save</button>
+                            <button onClick={() => { setAssigning(null); setAssignError('') }} className="text-gray-500 text-xs px-2 py-1 rounded hover:bg-gray-100">Cancel</button>
+                          </div>
+                          {assignError && <p className="text-red-500 text-xs">{assignError}</p>}
                         </div>
                       ) : (
-                        <button
-                          onClick={() => { setAssigning(req.id); setAssignDeptId('') }}
-                          className="text-blue-700 hover:underline text-xs font-medium"
-                        >
+                        <button onClick={() => { setAssigning(req.id); setAssignDeptId(''); setAssignError('') }} className="text-blue-700 hover:underline text-xs font-medium">
                           Assign
                         </button>
                       )}

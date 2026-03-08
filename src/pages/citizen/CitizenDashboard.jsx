@@ -10,14 +10,10 @@ export default function CitizenDashboard() {
   const [showForm, setShowForm] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState('')
+  const [formErrors, setFormErrors] = useState({})
   const [error, setError] = useState('')
   const [form, setForm] = useState({
-    title: '',
-    description: '',
-    category: '',
-    location: '',
-    imageUrl: '',
-    departmentId: ''
+    title: '', description: '', category: '', location: '', imageUrl: '', departmentId: ''
   })
 
   const statusColors = {
@@ -54,10 +50,23 @@ export default function CitizenDashboard() {
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
+    setFormErrors({ ...formErrors, [e.target.name]: '' })
+  }
+
+  const validate = () => {
+    const e = {}
+    if (!form.title.trim()) e.title = 'Title is required'
+    if (!form.description.trim()) e.description = 'Description is required'
+    if (!form.category.trim()) e.category = 'Category is required'
+    if (!form.location.trim()) e.location = 'Location is required'
+    if (!form.departmentId) e.departmentId = 'Please select a department'
+    return e
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    const e2 = validate()
+    if (Object.keys(e2).length > 0) { setFormErrors(e2); return }
     setSubmitting(true)
     setError('')
     setSuccess('')
@@ -66,6 +75,7 @@ export default function CitizenDashboard() {
       setSuccess('Request submitted successfully.')
       setShowForm(false)
       setForm({ title: '', description: '', category: '', location: '', imageUrl: '', departmentId: '' })
+      setFormErrors({})
       fetchRequests()
     } catch (err) {
       setError('Failed to submit request. Please try again.')
@@ -76,8 +86,6 @@ export default function CitizenDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-
-      {/* Navbar */}
       <nav className="bg-blue-900 px-8 py-4 flex justify-between items-center">
         <div>
           <h1 className="text-white text-xl font-bold">GSRS</h1>
@@ -85,44 +93,27 @@ export default function CitizenDashboard() {
         </div>
         <div className="flex items-center gap-4">
           <span className="text-blue-200 text-sm">Welcome, {user.name}</span>
-          <button
-            onClick={logout}
-            className="bg-white text-blue-900 text-sm font-medium px-4 py-1.5 rounded hover:bg-blue-50 transition"
-          >
-            Logout
-          </button>
+          <button onClick={logout} className="bg-white text-blue-900 text-sm font-medium px-4 py-1.5 rounded hover:bg-blue-50 transition">Logout</button>
         </div>
       </nav>
 
       <div className="max-w-5xl mx-auto px-6 py-8">
-
-        {/* Page Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
             <h2 className="text-2xl font-bold text-gray-800">My Service Requests</h2>
             <p className="text-gray-500 text-sm mt-1">Track and manage your submitted requests</p>
           </div>
           <button
-            onClick={() => { setShowForm(!showForm); setError(''); setSuccess('') }}
+            onClick={() => { setShowForm(!showForm); setError(''); setSuccess(''); setFormErrors({}) }}
             className="bg-blue-900 hover:bg-blue-800 text-white text-sm font-medium px-5 py-2 rounded transition"
           >
             {showForm ? 'Cancel' : '+ New Request'}
           </button>
         </div>
 
-        {/* Success / Error Messages */}
-        {success && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4 text-sm">
-            {success}
-          </div>
-        )}
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 text-sm">
-            {error}
-          </div>
-        )}
+        {success && <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4 text-sm">{success}</div>}
+        {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 text-sm">{error}</div>}
 
-        {/* New Request Form */}
         {showForm && (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Submit New Request</h3>
@@ -131,73 +122,59 @@ export default function CitizenDashboard() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
                 <input
-                  type="text"
-                  name="title"
-                  value={form.title}
-                  onChange={handleChange}
-                  required
+                  type="text" name="title" value={form.title} onChange={handleChange}
                   placeholder="e.g. Broken Street Light"
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${formErrors.title ? 'border-red-400' : 'border-gray-300'}`}
                 />
+                {formErrors.title && <p className="text-red-500 text-xs mt-1">{formErrors.title}</p>}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                 <textarea
-                  name="description"
-                  value={form.description}
-                  onChange={handleChange}
-                  rows={3}
+                  name="description" value={form.description} onChange={handleChange} rows={3}
                   placeholder="Describe the issue in detail"
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${formErrors.description ? 'border-red-400' : 'border-gray-300'}`}
                 />
+                {formErrors.description && <p className="text-red-500 text-xs mt-1">{formErrors.description}</p>}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                   <input
-                    type="text"
-                    name="category"
-                    value={form.category}
-                    onChange={handleChange}
+                    type="text" name="category" value={form.category} onChange={handleChange}
                     placeholder="e.g. Infrastructure"
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${formErrors.category ? 'border-red-400' : 'border-gray-300'}`}
                   />
+                  {formErrors.category && <p className="text-red-500 text-xs mt-1">{formErrors.category}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
                   <input
-                    type="text"
-                    name="location"
-                    value={form.location}
-                    onChange={handleChange}
+                    type="text" name="location" value={form.location} onChange={handleChange}
                     placeholder="e.g. Main Street"
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${formErrors.location ? 'border-red-400' : 'border-gray-300'}`}
                   />
+                  {formErrors.location && <p className="text-red-500 text-xs mt-1">{formErrors.location}</p>}
                 </div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
                 <select
-                  name="departmentId"
-                  value={form.departmentId}
-                  onChange={handleChange}
-                  required
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  name="departmentId" value={form.departmentId} onChange={handleChange}
+                  className={`w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white ${formErrors.departmentId ? 'border-red-400' : 'border-gray-300'}`}
                 >
                   <option value="">Select a department</option>
-                  {departments.map(d => (
-                    <option key={d.id} value={d.id}>{d.name}</option>
-                  ))}
+                  {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                 </select>
+                {formErrors.departmentId && <p className="text-red-500 text-xs mt-1">{formErrors.departmentId}</p>}
               </div>
 
               <div className="flex justify-end">
                 <button
-                  type="submit"
-                  disabled={submitting}
+                  type="submit" disabled={submitting}
                   className="bg-blue-900 hover:bg-blue-800 text-white text-sm font-medium px-6 py-2 rounded transition"
                 >
                   {submitting ? 'Submitting...' : 'Submit Request'}
@@ -207,14 +184,11 @@ export default function CitizenDashboard() {
           </div>
         )}
 
-        {/* Requests Table */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           {loading ? (
             <div className="px-6 py-12 text-center text-gray-400 text-sm">Loading requests...</div>
           ) : requests.length === 0 ? (
-            <div className="px-6 py-12 text-center text-gray-400 text-sm">
-              No requests yet. Click <strong>+ New Request</strong> to get started.
-            </div>
+            <div className="px-6 py-12 text-center text-gray-400 text-sm">No requests yet. Click <strong>+ New Request</strong> to get started.</div>
           ) : (
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">
@@ -239,9 +213,7 @@ export default function CitizenDashboard() {
                         {req.status.replace('_', ' ')}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-gray-500">
-                      {new Date(req.createdAt).toLocaleDateString()}
-                    </td>
+                    <td className="px-6 py-4 text-gray-500">{new Date(req.createdAt).toLocaleDateString()}</td>
                   </tr>
                 ))}
               </tbody>

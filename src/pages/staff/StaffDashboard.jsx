@@ -8,6 +8,7 @@ export default function StaffDashboard() {
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(null)
   const [selectedStatus, setSelectedStatus] = useState('')
+  const [statusError, setStatusError] = useState('')
   const [success, setSuccess] = useState('')
   const [error, setError] = useState('')
 
@@ -18,29 +19,25 @@ export default function StaffDashboard() {
     REJECTED: 'bg-red-100 text-red-800',
   }
 
-  useEffect(() => {
-    fetchRequests()
-  }, [])
+  useEffect(() => { fetchRequests() }, [])
 
   const fetchRequests = async () => {
-      setLoading(true)
-      try {
-        const res = await api.get('/requests')
-        setRequests(res.data.content)
-      } catch (err) {
-        console.error('Failed to fetch requests')
-      } finally {
-        setLoading(false)
-      }
+    setLoading(true)
+    try {
+      const res = await api.get('/requests')
+      setRequests(res.data.content)
+    } catch (err) {
+      console.error('Failed to fetch requests')
+    } finally {
+      setLoading(false)
     }
+  }
 
   const handleUpdateStatus = async (req) => {
-    if (!selectedStatus) return
+    if (!selectedStatus) { setStatusError('Please select a status'); return }
+    setStatusError('')
     try {
-      await api.patch(`/requests/${req.id}/status`, {
-        status: selectedStatus,
-        departmentId: req.departmentId
-      })
+      await api.patch(`/requests/${req.id}/status`, { status: selectedStatus, departmentId: req.departmentId })
       setSuccess('Status updated successfully.')
       setUpdating(null)
       setSelectedStatus('')
@@ -54,8 +51,6 @@ export default function StaffDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-
-      {/* Navbar */}
       <nav className="bg-blue-900 px-8 py-4 flex justify-between items-center">
         <div>
           <h1 className="text-white text-xl font-bold">GSRS</h1>
@@ -63,34 +58,19 @@ export default function StaffDashboard() {
         </div>
         <div className="flex items-center gap-4">
           <span className="text-blue-200 text-sm">Staff: {user.name}</span>
-          <button
-            onClick={logout}
-            className="bg-white text-blue-900 text-sm font-medium px-4 py-1.5 rounded hover:bg-blue-50 transition"
-          >
-            Logout
-          </button>
+          <button onClick={logout} className="bg-white text-blue-900 text-sm font-medium px-4 py-1.5 rounded hover:bg-blue-50 transition">Logout</button>
         </div>
       </nav>
 
       <div className="max-w-6xl mx-auto px-6 py-8">
-
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-gray-800">Department Requests</h2>
           <p className="text-gray-500 text-sm mt-1">Review and update the status of assigned requests</p>
         </div>
 
-        {success && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4 text-sm">
-            {success}
-          </div>
-        )}
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 text-sm">
-            {error}
-          </div>
-        )}
+        {success && <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4 text-sm">{success}</div>}
+        {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 text-sm">{error}</div>}
 
-        {/* Requests Table */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           {loading ? (
             <div className="px-6 py-12 text-center text-gray-400 text-sm">Loading requests...</div>
@@ -124,35 +104,25 @@ export default function StaffDashboard() {
                     </td>
                     <td className="px-6 py-4">
                       {updating === req.id ? (
-                        <div className="flex items-center gap-2">
-                          <select
-                            value={selectedStatus}
-                            onChange={(e) => setSelectedStatus(e.target.value)}
-                            className="border border-gray-300 rounded px-2 py-1 text-xs bg-white"
-                          >
-                            <option value="">Select status</option>
-                            <option value="IN_PROGRESS">In Progress</option>
-                            <option value="RESOLVED">Resolved</option>
-                            <option value="REJECTED">Rejected</option>
-                          </select>
-                          <button
-                            onClick={() => handleUpdateStatus(req)}
-                            className="bg-blue-900 text-white text-xs px-2 py-1 rounded hover:bg-blue-800"
-                          >
-                            Save
-                          </button>
-                          <button
-                            onClick={() => setUpdating(null)}
-                            className="text-gray-500 text-xs px-2 py-1 rounded hover:bg-gray-100"
-                          >
-                            Cancel
-                          </button>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <select
+                              value={selectedStatus}
+                              onChange={(e) => { setSelectedStatus(e.target.value); setStatusError('') }}
+                              className={`border rounded px-2 py-1 text-xs bg-white ${statusError ? 'border-red-400' : 'border-gray-300'}`}
+                            >
+                              <option value="">Select status</option>
+                              <option value="IN_PROGRESS">In Progress</option>
+                              <option value="RESOLVED">Resolved</option>
+                              <option value="REJECTED">Rejected</option>
+                            </select>
+                            <button onClick={() => handleUpdateStatus(req)} className="bg-blue-900 text-white text-xs px-2 py-1 rounded hover:bg-blue-800">Save</button>
+                            <button onClick={() => { setUpdating(null); setStatusError('') }} className="text-gray-500 text-xs px-2 py-1 rounded hover:bg-gray-100">Cancel</button>
+                          </div>
+                          {statusError && <p className="text-red-500 text-xs">{statusError}</p>}
                         </div>
                       ) : (
-                        <button
-                          onClick={() => { setUpdating(req.id); setSelectedStatus('') }}
-                          className="text-blue-700 hover:underline text-xs font-medium"
-                        >
+                        <button onClick={() => { setUpdating(req.id); setSelectedStatus(''); setStatusError('') }} className="text-blue-700 hover:underline text-xs font-medium">
                           Update Status
                         </button>
                       )}
